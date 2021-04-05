@@ -2,6 +2,7 @@ module RandomTest exposing (..)
 
 import Browser
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Random
 
@@ -24,13 +25,13 @@ main =
 
 
 type alias Model =
-    { dieFace : Int }
+    Spin
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model 1
-    , Cmd.none
+    ( Spin 0 0
+    , Random.generate NewFace spin
     )
 
 
@@ -40,7 +41,23 @@ init _ =
 
 type Msg
     = Roll
-    | NewFace Int
+    | NewFace Spin
+
+
+type alias Spin =
+    { one : Int
+    , two : Int
+    }
+
+
+roll : Random.Generator Int
+roll =
+    Random.int 1 6
+
+
+spin : Random.Generator Spin
+spin =
+    Random.map2 Spin roll roll
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -48,11 +65,11 @@ update msg model =
     case msg of
         Roll ->
             ( model
-            , Random.generate NewFace (Random.int 1 6)
+            , Random.generate NewFace spin
             )
 
         NewFace newFace ->
-            ( Model newFace
+            ( newFace
             , Cmd.none
             )
 
@@ -73,6 +90,14 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div []
-        [ h1 [] [ text (String.fromInt model.dieFace) ]
+        [ img [ src (diceURL model.one) ] []
+        , img [ src (diceURL model.two) ] []
         , button [ onClick Roll ] [ text "Roll" ]
         ]
+
+
+diceURL : Int -> String
+diceURL dieFace =
+    "http://roll.diceapi.com/images/poorly-drawn/d6/"
+        ++ String.fromInt dieFace
+        ++ ".png"
